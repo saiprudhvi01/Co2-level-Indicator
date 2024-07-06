@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CO2 Level Indicator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        @media screen and (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+            }
+        }
+
+        .c1 button {
+            margin: auto;
+        }
+
+        h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Co2 Level Indicator</h2>
+        <div class="c1">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <label for="threshold">Threshold Value:</label>
+            <input type="number" id="threshold" name="threshold" required>
+            <button id="ok" type="button">Submit</button>
+        </div>
+        <h2 id="hi"></h2>
+    </div>
+
+    <script>
+        let intervalId;
+        document.querySelector("#ok").addEventListener("click", () => {
+            var email = document.querySelector("#email").value;
+            var th = Number(document.querySelector("#threshold").value);
+            clearInterval(intervalId);
+            if (email === "") {
+                alert("Please enter the email address");
+            } else if (isNaN(th) || th <= 0) {
+                alert("Please enter a valid threshold value greater than 0");
+            } else {
+                console.log("start");
+                intervalId = setInterval(fetchData, 180000);
+            }
+        });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+        } else {
+            console.log("Geolocation is not supported by this browser.");
+        }
+        function successCallback(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+        }
+        function errorCallback(error) {
+            alert("Failed to get location");
+            window.location.href = "/";
+        }
+        function fetchData() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
+            function successCallback(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                fetch(`http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=487005f690d615ec7e530e8c6cffb5cf`)
+                    .then(res => res.json())
+                    .then(data => {
+                        var email = document.querySelector("#email").value;
+                        var t = data.list[0].components.co;
+                        var th = Number(document.querySelector("#threshold").value);
+                        document.querySelector("#hi").innerHTML = "The CO2 at the current position is: " + t+"mg/m^3" ;
+                        console.log(email);
+                        if (t > th) {
+                            fetch("/email/" + email)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        alert("Check proper network connection");
+                                    }
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+        }
+    </script>
+</body>
+
+</html>
